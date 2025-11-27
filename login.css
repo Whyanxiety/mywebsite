@@ -1,0 +1,107 @@
+/* login.css — фиолетовый градиент и анимации кнопок */
+:root{
+  --bg1: #5b21b6;
+  --bg2: #8b5cf6;
+  --accent: #a78bfa;
+  --card: #fff;
+  --radius: 14px;
+}
+
+*{box-sizing:border-box}
+body,html{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
+
+.auth-root{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: linear-gradient(135deg,var(--bg1),var(--bg2));
+  padding: 20px;
+}
+
+.auth-card{
+  width: 420px;
+  max-width: 95%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  color: #fff;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Branding */
+.branding h1{margin:0;font-size:22px;letter-spacing:0.2px}
+.branding p{margin:4px 0 18px;color: rgba(255,255,255,0.85)}
+
+/* Toggle */
+.toggle{
+  display:flex;
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.toggle button {
+  flex:1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: #eee;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform .18s ease, background .18s ease;
+}
+.toggle button.active{
+  background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
+
+/* Form */
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:13px;margin-bottom:6px;color:rgba(255,255,255,0.9)}
+.form-row input{
+  width:100%;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  color:#fff;
+  outline:none;
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.form-row input:focus{box-shadow:0 6px 20px rgba(0,0,0,0.25); transform: translateY(-2px)}
+
+.form-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-top:6px;
+}
+.form-actions button{
+  flex:0 0 auto;
+  padding:10px 16px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  font-weight:700;
+  background: linear-gradient(90deg,var(--accent), #c4b5fd);
+  color:#2d0266;
+  transition: transform .18s ease, box-shadow .18s ease;
+  box-shadow: 0 8px 22px rgba(99,102,241,0.18);
+}
+.form-actions button:hover{ transform: translateY(-3px); box-shadow:0 18px 40px rgba(99,102,241,0.22)}
+.link-back{color: rgba(255,255,255,0.85); text-decoration:none; margin-left:auto; font-size:14px}
+
+/* Error */
+.error{color:#ffd7d7;margin-top:8px;font-size:14px}
+
+.hidden{display:none}
+
+/* small responsive */
+@media (max-width:440px){
+  .auth-card{padding:18px}
+  .branding h1{font-size:18px}
+}

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Каталог рецептов 🍲</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top">
+    <h1>Каталог рецептов 🍴</h1>
+    <div class="controls">
+      <input id="search" placeholder="Поиск рецепта..." />
+      <button id="addBtn">➕ Новый рецепт</button>
+      <button id="authBtn">Войти / Зарегистрироваться</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="list" class="grid"></section>
+  </main>
+
+  <!-- Модалка -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close" id="closeModal">✕</button>
+      <h2 id="modalTitle">Добавить рецепт</h2>
+
+      <form id="recipeForm">
+        <input type="hidden" id="recipeId" />
+
+        <label>Название рецепта
+          <input id="title" required />
+        </label>
+
+        <label>Ингредиенты (по строке)
+          <textarea id="ingredients" rows="3"></textarea>
+        </label>
+
+        <label>Инструкция
+          <textarea id="steps" rows="4"></textarea>
+        </label>
+
+        <label>Изображение
+          <div class="image-picker">
+            <input type="file" id="customImage" accept="image/*" />
+            <div class="preview-container">
+              <img id="preview" src="images/card.png" alt="preview" />
+            </div>
+          </div>
+        </label>
+
+        <div class="form-actions">
+          <button type="submit" id="saveBtn">💾 Сохранить</button>
+          <button type="button" id="cancelBtn">Отмена</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Шаблон карточки -->
+  <template id="cardTemplate">
+    <article class="card">
+      <img class="card-img" src="" alt="" />
+      <div class="card-body">
+        <h3 class="card-title"></h3>
+        <p class="card-ingredients"></p>
+        <div class="card-actions">
+          <button class="view">👁 Просмотр</button>
+          <button class="edit">✏️ Редактировать</button>
+          <button class="delete">🗑 Удалить</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
