@@ -1,5 +1,4 @@
-// app.js
-const API = '/api';
+// app.js — локальная версия (localStorage, без API)
 const listEl = document.getElementById('list');
 const addBtn = document.getElementById('addBtn');
 const authBtn = document.getElementById('authBtn');
@@ -14,30 +13,30 @@ const previewImg = document.getElementById('preview');
 const customImage = document.getElementById('customImage');
 
 let recipes = [];
-let currentUser = null;
+let currentUser = null; // { email, name }
 
-// util: get token
-function getToken() { return localStorage.getItem('token'); }
-function authHeaders() {
-  const t = getToken();
-  return t ? { 'Authorization': 'Bearer ' + t } : {};
+// ---------- Helpers: localStorage ----------
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem('users') || '[]'); }
+  catch { return []; }
 }
+function saveUsers(u){ localStorage.setItem('users', JSON.stringify(u)); }
 
-async function fetchUser() {
-  const token = getToken();
-  if (!token) { currentUser = null; updateAuthUI(); return; }
-  try {
-    const res = await fetch(API + '/me', { headers: authHeaders() });
-    if (!res.ok) throw new Error('not auth');
-    currentUser = await res.json();
-  } catch {
-    currentUser = null;
-    localStorage.removeItem('token');
-  }
-  updateAuthUI();
+function getRecipes() {
+  try { return JSON.parse(localStorage.getItem('recipes') || '[]'); }
+  catch { return []; }
 }
+function saveRecipes(r){ localStorage.setItem('recipes', JSON.stringify(r)); }
 
+function getCurrentUser() {
+  try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); }
+  catch { return null; }
+}
+function setCurrentUser(u) { if (u) localStorage.setItem('currentUser', JSON.stringify(u)); else localStorage.removeItem('currentUser'); }
+
+// ---------- UI / Auth ----------
 function updateAuthUI() {
+  currentUser = getCurrentUser();
   if (currentUser) {
     authBtn.textContent = 'Выйти';
     addBtn.style.display = 'inline-block';
@@ -47,19 +46,26 @@ function updateAuthUI() {
   }
 }
 
-// Fetch recipes from server
-async function loadRecipes() {
-  try {
-    const res = await fetch(API + '/recipes');
-    recipes = await res.json();
-    renderList(searchInput.value);
-  } catch (e) {
-    console.error(e);
-    listEl.innerHTML = '<p style="color:#fff;text-align:center;">Не удалось загрузить рецепты</p>';
+// auth button behavior
+authBtn.onclick = () => {
+  if (currentUser) {
+    if (confirm('Выйти?')) {
+      setCurrentUser(null);
+      currentUser = null;
+      updateAuthUI();
+      renderList(searchInput.value);
+    }
+  } else {
+    window.location.href = 'login.html';
   }
+};
+
+// ---------- Load / Render ----------
+function loadRecipes() {
+  recipes = getRecipes();
+  renderList(searchInput.value);
 }
 
-// render list
 function renderList(filter = '') {
   listEl.innerHTML = '';
   const q = filter.trim().toLowerCase();
@@ -85,47 +91,32 @@ function renderList(filter = '') {
     const delBtn = card.querySelector('.delete');
     const actions = card.querySelector('.card-actions');
 
-    // ownership check
-    const isOwner = currentUser && currentUser.id === r.ownerId;
+    const isOwner = currentUser && currentUser.email === r.ownerEmail;
 
     if (!isOwner) {
-      // hide edit/delete, show large view
       editBtn.style.display = 'none';
       delBtn.style.display = 'none';
       actions.classList.add('full');
-      viewBtn.onclick = () => {
-        openViewModal(r);
-      };
     } else {
-      // owner: show edit/delete and small view
+      editBtn.style.display = '';
+      delBtn.style.display = '';
       actions.classList.remove('full');
-      viewBtn.onclick = () => {
-        openViewModal(r);
-      };
-      editBtn.onclick = () => openModal(true, r);
-      delBtn.onclick = async () => {
-        if (!confirm(`Удалить рецепт "${r.title}"?`)) return;
-        try {
-          const res = await fetch(`${API}/recipes/${r.id}`, {
-            method: 'DELETE',
-            headers: { ...authHeaders(), 'Content-Type': 'application/json' }
-          });
-          if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error || 'Ошибка удаления');
-          }
-          await loadRecipes();
-        } catch (err) {
-          alert(err.message || 'Ошибка');
-        }
-      };
     }
+
+    viewBtn.onclick = () => openViewModal(r);
+    editBtn.onclick = () => openModal(true, r);
+    delBtn.onclick = () => {
+      if (!confirm(`Удалить рецепт "${r.title}"?`)) return;
+      recipes = recipes.filter(x => x.id !== r.id);
+      saveRecipes(recipes);
+      loadRecipes();
+    };
 
     listEl.appendChild(node);
   });
 }
 
-// preview image picker
+// ---------- Modal / Form ----------
 customImage && customImage.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -134,8 +125,8 @@ customImage && customImage.addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-// modal handling
 function openModal(forEdit=false, recipe=null) {
+  currentUser = getCurrentUser();
   if (!currentUser) { window.location.href = 'login.html'; return; }
   modal.classList.remove('hidden');
   recipeForm.reset();
@@ -155,12 +146,14 @@ function openModal(forEdit=false, recipe=null) {
 function closeModalFn() { modal.classList.add('hidden'); }
 
 function openViewModal(recipe) {
+  // простое модальное окно через alert — можно заменить на красивое окно
   alert(`🍴 ${recipe.title}\n\nИнгредиенты:\n${recipe.ingredients.join(', ')}\n\nИнструкция:\n${recipe.steps}`);
 }
 
 // submit recipe
-recipeForm.addEventListener('submit', async e => {
+recipeForm.addEventListener('submit', e => {
   e.preventDefault();
+  currentUser = getCurrentUser();
   if (!currentUser) { window.location.href = 'login.html'; return; }
 
   const id = document.getElementById('recipeId').value;
@@ -171,33 +164,32 @@ recipeForm.addEventListener('submit', async e => {
 
   if (!title) return alert('Введите название рецепта');
 
-  try {
-    if (id) {
-      const res = await fetch(`${API}/recipes/${id}`, {
-        method: 'PUT',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, ingredients, steps, image })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Ошибка редактирования');
-      }
-    } else {
-      const res = await fetch(`${API}/recipes`, {
-        method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, ingredients, steps, image })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Ошибка создания');
-      }
-    }
-    await loadRecipes();
-    closeModalFn();
-  } catch (err) {
-    alert(err.message || 'Ошибка');
+  if (id) {
+    // edit
+    const idx = recipes.findIndex(r => r.id === id);
+    if (idx === -1) return alert('Рецепт не найден');
+    // ownership check
+    if (recipes[idx].ownerEmail !== currentUser.email) return alert('Нет прав редактировать');
+    recipes[idx] = { ...recipes[idx], title, ingredients, steps, image, updatedAt: Date.now() };
+  } else {
+    // create
+    const newRecipe = {
+      id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8),
+      title,
+      ingredients,
+      steps,
+      image,
+      ownerEmail: currentUser.email,
+      ownerName: currentUser.name || '',
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    recipes.unshift(newRecipe); // newest first
   }
+
+  saveRecipes(recipes);
+  loadRecipes();
+  closeModalFn();
 });
 
 // handlers
@@ -206,23 +198,8 @@ closeModal.onclick = closeModalFn;
 cancelBtn.onclick = closeModalFn;
 searchInput.oninput = () => renderList(searchInput.value);
 
-// auth button (login/logout)
-authBtn.onclick = () => {
-  if (currentUser) {
-    // logout
-    if (confirm('Выйти?')) {
-      localStorage.removeItem('token');
-      currentUser = null;
-      updateAuthUI();
-      renderList(searchInput.value);
-    }
-  } else {
-    window.location.href = 'login.html';
-  }
-};
-
 // initial load
-(async function init(){
-  await fetchUser();
-  await loadRecipes();
+(function init(){
+  updateAuthUI();
+  loadRecipes();
 })();
