@@ -1,4 +1,4 @@
-// app.js — локальная версия (localStorage, без API)
+// app.js — рецепты через Worker API
 const listEl = document.getElementById('list');
 const addBtn = document.getElementById('addBtn');
 const authBtn = document.getElementById('authBtn');
@@ -13,20 +13,7 @@ const previewImg = document.getElementById('preview');
 const customImage = document.getElementById('customImage');
 
 let recipes = [];
-let currentUser = null; // { email, name }
-
-// ---------- Helpers: localStorage ----------
-function getUsers() {
-  try { return JSON.parse(localStorage.getItem('users') || '[]'); }
-  catch { return []; }
-}
-function saveUsers(u){ localStorage.setItem('users', JSON.stringify(u)); }
-
-function getRecipes() {
-  try { return JSON.parse(localStorage.getItem('recipes') || '[]'); }
-  catch { return []; }
-}
-function saveRecipes(r){ localStorage.setItem('recipes', JSON.stringify(r)); }
+let currentUser = null;
 
 function getCurrentUser() {
   try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); }
@@ -34,7 +21,6 @@ function getCurrentUser() {
 }
 function setCurrentUser(u) { if (u) localStorage.setItem('currentUser', JSON.stringify(u)); else localStorage.removeItem('currentUser'); }
 
-// ---------- UI / Auth ----------
 function updateAuthUI() {
   currentUser = getCurrentUser();
   if (currentUser) {
@@ -46,7 +32,6 @@ function updateAuthUI() {
   }
 }
 
-// auth button behavior
 authBtn.onclick = () => {
   if (currentUser) {
     if (confirm('Выйти?')) {
@@ -61,9 +46,20 @@ authBtn.onclick = () => {
 };
 
 // ---------- Load / Render ----------
-function loadRecipes() {
-  recipes = getRecipes();
-  renderList(searchInput.value);
+async function loadRecipes() {
+  currentUser = getCurrentUser();
+  if (!currentUser) { recipes = []; renderList(); return; }
+
+  try {
+    const res = await fetch(`https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/recipes?user_id=${currentUser.user_id}`);
+    const data = await res.json();
+    recipes = data || [];
+    renderList(searchInput.value);
+  } catch (err) {
+    console.error(err);
+    recipes = [];
+    renderList(searchInput.value);
+  }
 }
 
 function renderList(filter = '') {
@@ -71,7 +67,7 @@ function renderList(filter = '') {
   const q = filter.trim().toLowerCase();
   const filtered = recipes.filter(r =>
     r.title.toLowerCase().includes(q) ||
-    r.ingredients.join(' ').toLowerCase().includes(q)
+    (r.ingredients || []).join(' ').toLowerCase().includes(q)
   );
 
   if (filtered.length === 0) {
@@ -84,14 +80,14 @@ function renderList(filter = '') {
     const card = node.querySelector('.card');
     card.querySelector('.card-img').src = r.image || 'images/card.png';
     card.querySelector('.card-title').textContent = r.title;
-    card.querySelector('.card-ingredients').textContent = r.ingredients.slice(0, 3).join(', ');
+    card.querySelector('.card-ingredients').textContent = (r.ingredients || []).slice(0, 3).join(', ');
 
     const viewBtn = card.querySelector('.view');
     const editBtn = card.querySelector('.edit');
     const delBtn = card.querySelector('.delete');
     const actions = card.querySelector('.card-actions');
 
-    const isOwner = currentUser && currentUser.email === r.ownerEmail;
+    const isOwner = currentUser && currentUser.user_id === r.user_id;
 
     if (!isOwner) {
       editBtn.style.display = 'none';
@@ -105,11 +101,19 @@ function renderList(filter = '') {
 
     viewBtn.onclick = () => openViewModal(r);
     editBtn.onclick = () => openModal(true, r);
-    delBtn.onclick = () => {
+    delBtn.onclick = async () => {
       if (!confirm(`Удалить рецепт "${r.title}"?`)) return;
-      recipes = recipes.filter(x => x.id !== r.id);
-      saveRecipes(recipes);
-      loadRecipes();
+      try {
+        await fetch(`https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/recipes`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: r.id, user_id: currentUser.user_id })
+        });
+        await loadRecipes();
+      } catch(err) {
+        console.error(err);
+        alert('Ошибка удаления');
+      }
     };
 
     listEl.appendChild(node);
@@ -135,8 +139,8 @@ function openModal(forEdit=false, recipe=null) {
     modalTitle.textContent = 'Редактировать рецепт';
     document.getElementById('recipeId').value = recipe.id;
     document.getElementById('title').value = recipe.title;
-    document.getElementById('ingredients').value = recipe.ingredients.join('\n');
-    document.getElementById('steps').value = recipe.steps;
+    document.getElementById('ingredients').value = (recipe.ingredients || []).join('\n');
+    document.getElementById('steps').value = recipe.steps || '';
     previewImg.src = recipe.image || 'images/card.png';
   } else {
     modalTitle.textContent = 'Новый рецепт';
@@ -146,12 +150,11 @@ function openModal(forEdit=false, recipe=null) {
 function closeModalFn() { modal.classList.add('hidden'); }
 
 function openViewModal(recipe) {
-  // простое модальное окно через alert — можно заменить на красивое окно
-  alert(`🍴 ${recipe.title}\n\nИнгредиенты:\n${recipe.ingredients.join(', ')}\n\nИнструкция:\n${recipe.steps}`);
+  alert(`🍴 ${recipe.title}\n\nИнгредиенты:\n${(recipe.ingredients || []).join('\n')}\n\nИнструкция:\n${recipe.steps || ''}`);
 }
 
 // submit recipe
-recipeForm.addEventListener('submit', e => {
+recipeForm.addEventListener('submit', async e => {
   e.preventDefault();
   currentUser = getCurrentUser();
   if (!currentUser) { window.location.href = 'login.html'; return; }
@@ -164,32 +167,28 @@ recipeForm.addEventListener('submit', e => {
 
   if (!title) return alert('Введите название рецепта');
 
-  if (id) {
-    // edit
-    const idx = recipes.findIndex(r => r.id === id);
-    if (idx === -1) return alert('Рецепт не найден');
-    // ownership check
-    if (recipes[idx].ownerEmail !== currentUser.email) return alert('Нет прав редактировать');
-    recipes[idx] = { ...recipes[idx], title, ingredients, steps, image, updatedAt: Date.now() };
-  } else {
-    // create
-    const newRecipe = {
-      id: Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8),
-      title,
-      ingredients,
-      steps,
-      image,
-      ownerEmail: currentUser.email,
-      ownerName: currentUser.name || '',
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    recipes.unshift(newRecipe); // newest first
+  try {
+    if (id) {
+      // edit
+      await fetch(`https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/recipes`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, user_id: currentUser.user_id, title, ingredients, steps, image })
+      });
+    } else {
+      // create
+      await fetch(`https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/recipes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.user_id, title, ingredients, steps, image })
+      });
+    }
+    await loadRecipes();
+    closeModalFn();
+  } catch (err) {
+    console.error(err);
+    alert('Ошибка сохранения рецепта');
   }
-
-  saveRecipes(recipes);
-  loadRecipes();
-  closeModalFn();
 });
 
 // handlers
@@ -199,7 +198,7 @@ cancelBtn.onclick = closeModalFn;
 searchInput.oninput = () => renderList(searchInput.value);
 
 // initial load
-(function init(){
+(async function init(){
   updateAuthUI();
-  loadRecipes();
+  await loadRecipes();
 })();

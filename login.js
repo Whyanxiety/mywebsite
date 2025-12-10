@@ -1,4 +1,4 @@
-// login.js — локальная auth (localStorage) с SHA-256 хешем пароля
+// login.js — auth через Worker API
 
 const btnSignIn = document.getElementById('btnSignIn');
 const btnSignUp = document.getElementById('btnSignUp');
@@ -28,26 +28,14 @@ function setMode(m) {
   errorEl && (errorEl.textContent = '');
 }
 
-function getUsers() {
-  try { return JSON.parse(localStorage.getItem('users') || '[]'); }
-  catch { return []; }
-}
-function saveUsers(u){ localStorage.setItem('users', JSON.stringify(u)); }
-
-function setCurrentUser(u) { localStorage.setItem('currentUser', JSON.stringify(u)); }
-
-// SHA-256 helper
-async function hashPassword(password) {
-  const enc = new TextEncoder();
-  const data = enc.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+function setCurrentUser(u) {
+  localStorage.setItem('currentUser', JSON.stringify(u));
 }
 
 authForm && authForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   errorEl.textContent = '';
+
   const email = document.getElementById('email').value.trim().toLowerCase();
   const password = document.getElementById('password').value;
   const name = (document.getElementById('name') && document.getElementById('name').value.trim()) || '';
@@ -67,25 +55,28 @@ authForm && authForm.addEventListener('submit', async (e) => {
     return;
   }
 
-  const users = getUsers();
-
   try {
     if (mode === 'signin') {
-      const user = users.find(u => u.email === email);
-      if (!user) { errorEl.textContent = 'Пользователь не найден'; return; }
-      const hash = await hashPassword(password);
-      if (hash !== user.passwordHash) { errorEl.textContent = 'Неверный пароль'; return; }
-      // success
-      setCurrentUser({ email: user.email, name: user.name });
+      const res = await fetch('https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) { errorEl.textContent = data.error || 'Ошибка'; return; }
+
+      setCurrentUser({ user_id: data.user_id, email, name: data.name || '' });
       window.location.href = 'index.html';
     } else {
-      // register
-      if (users.some(u => u.email === email)) { errorEl.textContent = 'Email уже зарегистрирован'; return; }
-      const hash = await hashPassword(password);
-      const newUser = { email, name, passwordHash: hash, createdAt: Date.now() };
-      users.push(newUser);
-      saveUsers(users);
-      setCurrentUser({ email: newUser.email, name: newUser.name });
+      const res = await fetch('https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, password, name })
+      });
+      const data = await res.json();
+      if (!res.ok) { errorEl.textContent = data.error || 'Ошибка'; return; }
+
+      setCurrentUser({ user_id: data.user_id, email, name });
       window.location.href = 'index.html';
     }
   } catch (err) {
