@@ -1,3 +1,4 @@
+// login.js — авторизация через Supabase
 const btnSignIn = document.getElementById('btnSignIn');
 const btnSignUp = document.getElementById('btnSignUp');
 const nameField = document.getElementById('nameField');

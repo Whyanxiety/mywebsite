@@ -1,3 +1,4 @@
+// app.js — управление рецептами через Supabase
 const listEl = document.getElementById('list');
 const addBtn = document.getElementById('addBtn');
 const authBtn = document.getElementById('authBtn');
