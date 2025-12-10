@@ -9,7 +9,7 @@
   <!-- Подключаем Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
   <script>
-    const supabase = supabase.createClient(
+    const supabaseClient = supabase.createClient(
       'https://xliizzhladrslfruhija.supabase.co',  // замени на свой URL
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsaWl6emhsYWRyc2xmcnVoaWphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzNzMwMzksImV4cCI6MjA4MDk0OTAzOX0.lEseiv5RiIoxzmQyUGk5YMSHF-TU9jGU0yxTGGp0HxQ'      // замени на свой anon key
     );

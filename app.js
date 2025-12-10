@@ -50,7 +50,7 @@ async function loadRecipes() {
   currentUser = getCurrentUser();
   if (!currentUser) { recipes = []; renderList(); return; }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('recipes')
     .select('*')
     .order('created_at', { ascending: false });
@@ -103,7 +103,7 @@ function renderList(filter = '') {
     delBtn.onclick = async () => {
       if (!confirm(`Удалить рецепт "${r.title}"?`)) return;
       try {
-        await supabase.from('recipes').delete().eq('id', r.id).eq('user_id', currentUser.user_id);
+        await supabaseClient.from('recipes').delete().eq('id', r.id).eq('user_id', currentUser.user_id);
         await loadRecipes();
       } catch(err) {
         console.error(err);
@@ -164,9 +164,9 @@ recipeForm.addEventListener('submit', async e => {
 
   try {
     if (id) {
-      await supabase.from('recipes').update({ title, ingredients, steps, image }).eq('id', id);
+      await supabaseClient.from('recipes').update({ title, ingredients, steps, image }).eq('id', id);
     } else {
-      await supabase.from('recipes').insert({ user_id: currentUser.user_id, title, ingredients, steps, image });
+      await supabaseClient.from('recipes').insert({ user_id: currentUser.user_id, title, ingredients, steps, image });
     }
     await loadRecipes();
     closeModalFn();
