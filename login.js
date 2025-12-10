@@ -40,7 +40,7 @@ form.onsubmit = async (e) => {
 
   try {
     if (mode === "register") {
-      const { data, error } = await window.supabaseClient.auth.signUp({
+      const { data, error } = await window.supabase.auth.signUp({
         email: email,
         password: pass,
         options: { data: { name: name || "" } }
@@ -51,7 +51,7 @@ form.onsubmit = async (e) => {
     }
 
     if (mode === "login") {
-      const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+      const { data, error } = await window.supabase.auth.signInWithPassword({
         email: email,
         password: pass
       });
