@@ -1,4 +1,10 @@
 // app.js — управление рецептами через Supabase
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = 'https://xliizzhladrslfruhija.supabase.co'
+const supabaseKey = process.env.SUPABASE_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
 const listEl = document.getElementById('list');
 const addBtn = document.getElementById('addBtn');
 const authBtn = document.getElementById('authBtn');
@@ -50,7 +56,7 @@ async function loadRecipes() {
   currentUser = getCurrentUser();
   if (!currentUser) { recipes = []; renderList(); return; }
 
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from('recipes')
     .select('*')
     .order('created_at', { ascending: false });
@@ -103,7 +109,7 @@ function renderList(filter = '') {
     delBtn.onclick = async () => {
       if (!confirm(`Удалить рецепт "${r.title}"?`)) return;
       try {
-        await supabaseClient.from('recipes').delete().eq('id', r.id).eq('user_id', currentUser.user_id);
+        await supabase.from('recipes').delete().eq('id', r.id).eq('user_id', currentUser.user_id);
         await loadRecipes();
       } catch(err) {
         console.error(err);
@@ -164,9 +170,9 @@ recipeForm.addEventListener('submit', async e => {
 
   try {
     if (id) {
-      await supabaseClient.from('recipes').update({ title, ingredients, steps, image }).eq('id', id);
+      await supabase.from('recipes').update({ title, ingredients, steps, image }).eq('id', id);
     } else {
-      await supabaseClient.from('recipes').insert({ user_id: currentUser.user_id, title, ingredients, steps, image });
+      await supabase.from('recipes').insert({ user_id: currentUser.user_id, title, ingredients, steps, image });
     }
     await loadRecipes();
     closeModalFn();

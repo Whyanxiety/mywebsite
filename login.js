@@ -1,3 +1,8 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = 'https://xliizzhladrslfruhija.supabase.co'
+const supabaseKey = process.env.SUPABASE_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
 const btnSignIn = document.getElementById("btnSignIn");
 const btnSignUp = document.getElementById("btnSignUp");
 const nameField = document.getElementById("nameField");
