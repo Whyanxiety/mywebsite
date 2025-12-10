@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Вход / Регистрация — Рецепты</title>
   <link rel="stylesheet" href="login.css" />
-  
-  <!-- Подключаем Supabase -->
+
+  <!-- Подключаем Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
   <script>
     const supabaseClient = supabase.createClient(
-      'https://xliizzhladrslfruhija.supabase.co',  // замени на свой URL
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsaWl6emhsYWRyc2xmcnVoaWphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzNzMwMzksImV4cCI6MjA4MDk0OTAzOX0.lEseiv5RiIoxzmQyUGk5YMSHF-TU9jGU0yxTGGp0HxQ'      // замени на свой anon key
+      'https://YOUR_SUPABASE_URL', // замените на свой URL
+      'YOUR_SUPABASE_ANON_KEY'     // замените на свой anon key
     );
   </script>
 </head>

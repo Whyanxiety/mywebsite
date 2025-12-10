@@ -1,96 +1,65 @@
-// login.js — рабочая авторизация через Supabase
-const btnSignIn = document.getElementById('btnSignIn');
-const btnSignUp = document.getElementById('btnSignUp');
-const nameField = document.getElementById('nameField');
-const authForm = document.getElementById('authForm');
-const submitBtn = document.getElementById('submitBtn');
-const errorEl = document.getElementById('error');
+const btnSignIn = document.getElementById("btnSignIn");
+const btnSignUp = document.getElementById("btnSignUp");
+const nameField = document.getElementById("nameField");
+const submitBtn = document.getElementById("submitBtn");
+const form = document.getElementById("authForm");
+const errorBox = document.getElementById("error");
 
-let mode = 'signin'; // или 'signup'
+let mode = "login";
 
-btnSignIn?.addEventListener('click', () => setMode('signin'));
-btnSignUp?.addEventListener('click', () => setMode('signup'));
+btnSignIn.onclick = () => {
+  mode = "login";
+  btnSignIn.classList.add("active");
+  btnSignUp.classList.remove("active");
+  nameField.classList.add("hidden");
+  submitBtn.textContent = "Войти";
+  errorBox.textContent = "";
+};
 
-function setMode(m) {
-  mode = m;
-  if (m === 'signin') {
-    btnSignIn.classList.add('active');
-    btnSignUp.classList.remove('active');
-    nameField.classList.add('hidden');
-    submitBtn.textContent = 'Войти';
-  } else {
-    btnSignUp.classList.add('active');
-    btnSignIn.classList.remove('active');
-    nameField.classList.remove('hidden');
-    submitBtn.textContent = 'Регистрация';
-  }
-  errorEl.textContent = '';
-}
+btnSignUp.onclick = () => {
+  mode = "register";
+  btnSignUp.classList.add("active");
+  btnSignIn.classList.remove("active");
+  nameField.classList.remove("hidden");
+  submitBtn.textContent = "Создать аккаунт";
+  errorBox.textContent = "";
+};
 
-function setCurrentUser(u) {
-  localStorage.setItem('currentUser', JSON.stringify(u));
-}
-
-authForm?.addEventListener('submit', async e => {
+form.onsubmit = async (e) => {
   e.preventDefault();
-  errorEl.textContent = '';
+  errorBox.textContent = "";
 
-  const email = document.getElementById('email').value.trim().toLowerCase();
-  const password = document.getElementById('password').value;
-  const name = document.getElementById('name')?.value.trim() || '';
+  const email = document.getElementById("email").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  const name = document.getElementById("name").value.trim();
 
-  if (!email || !password) {
-    errorEl.textContent = 'Заполните email и пароль';
+  if (!email || !pass) {
+    errorBox.textContent = "Заполните email и пароль";
     return;
   }
 
   try {
-    let result, error;
-
-    if (mode === 'signin') {
-      // Вход
-      ({ data: result, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      }));
-
-      if (error) throw error;
-      if (!result.user) throw new Error('Пользователь не найден');
-
-      setCurrentUser({
-        user_id: result.user.id,
-        email,
-        name: result.user.user_metadata?.name || ''
+    if (mode === "register") {
+      const { data, error } = await window.supabaseClient.auth.signUp({
+        email: email,
+        password: pass,
+        options: { data: { name: name || "" } }
       });
-
-    } else {
-      // Регистрация
-      ({ data: result, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { name }
-        }
-      }));
-
       if (error) throw error;
-      if (!result.user) throw new Error('Не удалось создать пользователя');
-
-      setCurrentUser({
-        user_id: result.user.id,
-        email,
-        name
-      });
+      alert("Аккаунт создан! Теперь войдите.");
+      btnSignIn.click();
     }
 
-    // Перенаправляем на каталог
-    window.location.href = 'index.html';
-
+    if (mode === "login") {
+      const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: pass
+      });
+      if (error) throw error;
+      window.location.href = "index.html";
+    }
   } catch (err) {
     console.error(err);
-    errorEl.textContent = err.message || 'Произошла ошибка';
+    errorBox.textContent = err.message || "Ошибка";
   }
-});
-
-// По умолчанию — вход
-setMode('signin');
+};

@@ -5,15 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Каталог рецептов 🍲</title>
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
-  <script>
-    const supabaseClient = supabase.createClient(
-      'https://xliizzhladrslfruhija.supabase.co',  // замени на свой URL
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsaWl6emhsYWRyc2xmcnVoaWphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzNzMwMzksImV4cCI6MjA4MDk0OTAzOX0.lEseiv5RiIoxzmQyUGk5YMSHF-TU9jGU0yxTGGp0HxQ'      // замени на свой anon key
-    );
-  </script>
 </head>
 <body>
   <header class="top">
@@ -29,27 +20,21 @@
     <section id="list" class="grid"></section>
   </main>
 
-  <!-- Модалка -->
   <div id="modal" class="modal hidden">
     <div class="modal-content">
       <button class="close" id="closeModal">✕</button>
       <h2 id="modalTitle">Добавить рецепт</h2>
-
       <form id="recipeForm">
         <input type="hidden" id="recipeId" />
-
         <label>Название рецепта
           <input id="title" required />
         </label>
-
         <label>Ингредиенты (по строке)
           <textarea id="ingredients" rows="3"></textarea>
         </label>
-
         <label>Инструкция
           <textarea id="steps" rows="4"></textarea>
         </label>
-
         <label>Изображение
           <div class="image-picker">
             <input type="file" id="customImage" accept="image/*" />
@@ -58,7 +43,6 @@
             </div>
           </div>
         </label>
-
         <div class="form-actions">
           <button type="submit" id="saveBtn">💾 Сохранить</button>
           <button type="button" id="cancelBtn">Отмена</button>
@@ -81,6 +65,15 @@
       </div>
     </article>
   </template>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <script>
+    window.supabaseClient = supabase.createClient(
+      "https://xliizzhladrslfruhija.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsaWl6emhsYWRyc2xmcnVoaWphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzNzMwMzksImV4cCI6MjA4MDk0OTAzOX0.lEseiv5RiIoxzmQyUGk5YMSHF-TU9jGU0yxTGGp0HxQ"
+    );
+  </script>
 
   <script src="app.js"></script>
 </body>
