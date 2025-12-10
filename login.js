@@ -1,4 +1,4 @@
-// login.js — авторизация через Supabase
+// login.js — рабочая авторизация через Supabase
 const btnSignIn = document.getElementById('btnSignIn');
 const btnSignUp = document.getElementById('btnSignUp');
 const nameField = document.getElementById('nameField');
@@ -6,7 +6,7 @@ const authForm = document.getElementById('authForm');
 const submitBtn = document.getElementById('submitBtn');
 const errorEl = document.getElementById('error');
 
-let mode = 'signin';
+let mode = 'signin'; // или 'signup'
 
 btnSignIn?.addEventListener('click', () => setMode('signin'));
 btnSignUp?.addEventListener('click', () => setMode('signup'));
@@ -39,38 +39,58 @@ authForm?.addEventListener('submit', async e => {
   const password = document.getElementById('password').value;
   const name = document.getElementById('name')?.value.trim() || '';
 
-  if (!email || !password) { 
-    errorEl.textContent = 'Заполните email и пароль'; 
-    return; 
+  if (!email || !password) {
+    errorEl.textContent = 'Заполните email и пароль';
+    return;
   }
 
   try {
-    let data, error;
+    let result, error;
 
     if (mode === 'signin') {
-      ({ data, error } = await supabase.auth.signInWithPassword({ email, password }));
-    } else {
-      ({ data, error } = await supabase.auth.signUp({ 
-        email, 
-        password, 
-        options: { data: { name } } 
+      // Вход
+      ({ data: result, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       }));
+
+      if (error) throw error;
+      if (!result.user) throw new Error('Пользователь не найден');
+
+      setCurrentUser({
+        user_id: result.user.id,
+        email,
+        name: result.user.user_metadata?.name || ''
+      });
+
+    } else {
+      // Регистрация
+      ({ data: result, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name }
+        }
+      }));
+
+      if (error) throw error;
+      if (!result.user) throw new Error('Не удалось создать пользователя');
+
+      setCurrentUser({
+        user_id: result.user.id,
+        email,
+        name
+      });
     }
 
-    if (error) throw error;
-    if (!data?.user) throw new Error('Пользователь не найден');
-
-    setCurrentUser({ 
-      user_id: data.user.id, 
-      email, 
-      name: data.user.user_metadata?.name || name 
-    });
-
+    // Перенаправляем на каталог
     window.location.href = 'index.html';
+
   } catch (err) {
-    console.error('Supabase auth error:', err);
+    console.error(err);
     errorEl.textContent = err.message || 'Произошла ошибка';
   }
 });
 
+// По умолчанию — вход
 setMode('signin');
