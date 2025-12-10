@@ -7,8 +7,8 @@ const errorEl = document.getElementById('error');
 
 let mode = 'signin';
 
-btnSignIn && btnSignIn.addEventListener('click', () => setMode('signin'));
-btnSignUp && btnSignUp.addEventListener('click', () => setMode('signup'));
+btnSignIn?.addEventListener('click', () => setMode('signin'));
+btnSignUp?.addEventListener('click', () => setMode('signup'));
 
 function setMode(m) {
   mode = m;
@@ -30,35 +30,45 @@ function setCurrentUser(u) {
   localStorage.setItem('currentUser', JSON.stringify(u));
 }
 
-authForm.addEventListener('submit', async e => {
+authForm?.addEventListener('submit', async e => {
   e.preventDefault();
   errorEl.textContent = '';
 
   const email = document.getElementById('email').value.trim().toLowerCase();
   const password = document.getElementById('password').value;
-  const name = (document.getElementById('name')?.value.trim()) || '';
+  const name = document.getElementById('name')?.value.trim() || '';
 
-  if (!email || !password) { errorEl.textContent = 'Заполните email и пароль'; return; }
+  if (!email || !password) { 
+    errorEl.textContent = 'Заполните email и пароль'; 
+    return; 
+  }
 
   try {
+    let data, error;
+
     if (mode === 'signin') {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      setCurrentUser({ user_id: data.user.id, email, name: data.user.user_metadata?.name || '' });
-      window.location.href = 'index.html';
+      ({ data, error } = await supabase.auth.signInWithPassword({ email, password }));
     } else {
-      const { data, error } = await supabase.auth.signUp({ 
+      ({ data, error } = await supabase.auth.signUp({ 
         email, 
         password, 
         options: { data: { name } } 
-      });
-      if (error) throw error;
-      setCurrentUser({ user_id: data.user.id, email, name });
-      window.location.href = 'index.html';
+      }));
     }
+
+    if (error) throw error;
+    if (!data?.user) throw new Error('Пользователь не найден');
+
+    setCurrentUser({ 
+      user_id: data.user.id, 
+      email, 
+      name: data.user.user_metadata?.name || name 
+    });
+
+    window.location.href = 'index.html';
   } catch (err) {
-    console.error(err);
-    errorEl.textContent = err.message;
+    console.error('Supabase auth error:', err);
+    errorEl.textContent = err.message || 'Произошла ошибка';
   }
 });
 
