@@ -1,4 +1,3 @@
-// app.js — рецепты через Worker API
 const listEl = document.getElementById('list');
 const addBtn = document.getElementById('addBtn');
 const authBtn = document.getElementById('authBtn');
@@ -50,16 +49,15 @@ async function loadRecipes() {
   currentUser = getCurrentUser();
   if (!currentUser) { recipes = []; renderList(); return; }
 
-  try {
-    const res = await fetch(`https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/recipes?user_id=${currentUser.user_id}`);
-    const data = await res.json();
-    recipes = data || [];
-    renderList(searchInput.value);
-  } catch (err) {
-    console.error(err);
-    recipes = [];
-    renderList(searchInput.value);
-  }
+  const { data, error } = await supabase
+    .from('recipes')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); recipes = []; renderList(); return; }
+
+  recipes = data;
+  renderList(searchInput.value);
 }
 
 function renderList(filter = '') {
@@ -104,11 +102,7 @@ function renderList(filter = '') {
     delBtn.onclick = async () => {
       if (!confirm(`Удалить рецепт "${r.title}"?`)) return;
       try {
-        await fetch(`https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/recipes`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: r.id, user_id: currentUser.user_id })
-        });
+        await supabase.from('recipes').delete().eq('id', r.id).eq('user_id', currentUser.user_id);
         await loadRecipes();
       } catch(err) {
         console.error(err);
@@ -121,7 +115,7 @@ function renderList(filter = '') {
 }
 
 // ---------- Modal / Form ----------
-customImage && customImage.addEventListener('change', e => {
+customImage?.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -169,19 +163,9 @@ recipeForm.addEventListener('submit', async e => {
 
   try {
     if (id) {
-      // edit
-      await fetch(`https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/recipes`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, user_id: currentUser.user_id, title, ingredients, steps, image })
-      });
+      await supabase.from('recipes').update({ title, ingredients, steps, image }).eq('id', id);
     } else {
-      // create
-      await fetch(`https://solitary-waterfall-406d.flarpzflarpz2255.workers.dev/api/recipes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.user_id, title, ingredients, steps, image })
-      });
+      await supabase.from('recipes').insert({ user_id: currentUser.user_id, title, ingredients, steps, image });
     }
     await loadRecipes();
     closeModalFn();
