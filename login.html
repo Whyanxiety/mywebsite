@@ -3,47 +3,42 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Вход / Регистрация — Рецепты</title>
-  <link rel="stylesheet" href="login.css" />
+  <title>Авторизация</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <script>
+    const supabase = supabase.createClient(
+      'https://YOUR_SUPABASE_URL', 
+      'YOUR_SUPABASE_ANON_KEY'
+    );
+  </script>
 </head>
 <body>
-  <main class="auth-root">
-    <div class="auth-card">
-      <div class="branding">
-        <h1>Каталог рецептов</h1>
-        <p>Вход и регистрация</p>
-      </div>
-
-      <div class="toggle">
-        <button id="btnSignIn" class="active">Войти</button>
-        <button id="btnSignUp">Регистрация</button>
-      </div>
-
-      <form id="authForm" class="form">
-        <div id="nameField" class="form-row hidden">
-          <label>Имя</label>
-          <input id="name" type="text" placeholder="Ваше имя (необязательно)" />
-        </div>
-
-        <div class="form-row">
-          <label>Email</label>
-          <input id="email" type="email" placeholder="you@example.com" required />
-        </div>
-
-        <div class="form-row">
-          <label>Пароль</label>
-          <input id="password" type="password" placeholder="Пароль" required />
-        </div>
-
-        <div class="form-actions">
-          <button id="submitBtn" type="submit">Войти</button>
-          <a href="index.html" class="link-back">На каталог (просмотр)</a>
-        </div>
-
-        <p id="error" class="error"></p>
-      </form>
+  <div class="login-container">
+    <h1>Вход / Регистрация</h1>
+    <div class="login-buttons">
+      <button id="btnSignIn">Войти</button>
+      <button id="btnSignUp">Регистрация</button>
     </div>
-  </main>
+
+    <form id="authForm">
+      <div id="nameField" class="hidden">
+        <label>Имя
+          <input type="text" id="name" />
+        </label>
+      </div>
+
+      <label>Email
+        <input type="email" id="email" required />
+      </label>
+      <label>Пароль
+        <input type="password" id="password" required />
+      </label>
+
+      <button type="submit" id="submitBtn">Войти</button>
+      <p id="error" class="error"></p>
+    </form>
+  </div>
 
   <script src="login.js"></script>
 </body>

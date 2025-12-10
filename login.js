@@ -22,7 +22,7 @@ function setMode(m) {
     btnSignUp.classList.add('active');
     btnSignIn.classList.remove('active');
     nameField.classList.remove('hidden');
-    submitBtn.textContent = 'Зарегистрироваться';
+    submitBtn.textContent = 'Регистрация';
   }
   errorEl.textContent = '';
 }
